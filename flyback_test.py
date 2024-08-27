@@ -33,31 +33,34 @@ def flybackTransformer_calc():
 
 def calc_lg() :
     print("计算气隙lg=")
-    pi=3.1415926
-    N = 63
-    ug = 4*pi*10**-7
-    #ug=1
-    Ae = 39.6
-    L2 = 780
-    lg = N**2 * ug * Ae * 10**-6 / (L2*10**-6)
+    u0 = 1.26*10**-6
+    N1 = 20
+    L1 = 905 * 10**-6
+    Ae = 39.6 * 10**-6
+    N2 = 63
+    L2 = 755 * 10**-6
+    lg = (u0*Ae)*(N2**2 / L2 - N1**2 / L1)
     print(lg*10**3)
 
 def calc_Ntons():
-    x = sympy.Symbol('x')
-    
-    N1 = 20
-    L1 = 905 * 10**-6
-    L2 = 300 * 10**-6
-    N2 = sympy.symbols('N2')
-    Ae = 39.6 * 10**-6
+    L2 = 755 * 10**-6
+    Isat = 1.2
     Bmax = 0.4
+    L1 = 905 * 10**-6
+    N1 = 20   
+    Ae = 39.6 * 10**-6
+    u0 = 1.26 * 10**-6
 
-
-    sov = sympy.solve(
-        (N1**2 / L1 + N2**2 / L2)*Ae*Bmax/N2-1.42,N2
-        )
-    print(sov)
-
+    lg,N2 = sympy.symbols('lg,N2')
+    eq1 = (u0*Ae)*(N2**2 / L2 - N1**2 / L1)-lg
+    eq2 = (N1**2 / L1 + lg/(u0*Ae))*Ae*Bmax / N2 - Isat
+    solv = sympy.solve(
+        [eq1,eq2],
+        [lg,N2]
+    )
+    lg = solv[0][0]*10**3
+    N2 = solv[0][1]
+    print("lg=",solv[0][0]*10**3,"mm  ","N2=",solv[0][1])
 
 def calc_Isat_withGap():
     pi=3.1415926
@@ -75,5 +78,6 @@ def calc_Isat_withGap():
     print(sov)
 
 
-calc_Isat_withGap()
+
+calc_Ntons()
 #testSympy()
