@@ -6,9 +6,9 @@ from math import sqrt
 
 pi = 3.1415926
 #电气参数
-eff = 0.8 #电源效率
-Vo = 15 #输出电压
-Io_max = 0.8 #额定输出电流
+eff = 0.85 #电源效率
+Vo = 12 #输出电压
+Io_max = 4.2 #额定输出电流
 Pmax = Vo * Io_max / eff #最大功率
 print("Pmax = ",Pmax,"W")
 
@@ -31,8 +31,6 @@ print("Td = ",Td*10**3,"ms")
 Cbus = 2*Pmax*(1/(2*Fi_AC) - Tc)/(eff*(Vbus_pk_Min**2 - (Vbus_pk_Min-Vbus_pp)**2))
 print("Cbus = ",Cbus*10**6,"uF")
 
-
-
 ####################################
 #整流桥计算
 PF = 0.6 #功率因数
@@ -47,13 +45,18 @@ k_vds = 0.8#降额系数
 mos_VDS = mos_VDS_max * k_vds#mosVDS电压
 print("mos应力=",mos_VDS,"v")
 
-VRCD = mos_VDS - Vbus_pk_Max - 0.7
-VOR = 0.7*VRCD
+VRCD_pk = mos_VDS - Vbus_pk_Max - 0.7 #RCD峰值电压
+
+VRCD_pb = 0.8*VRCD_pk#RCD波谷电压
+
+VOR = 0.8*VRCD_pb
 
 VRCD_Diod = VOR + Vbus_pk_Max
 
+
+
 print("反射电压VOR=",VOR,"V")
-print("RCD电压=",VRCD,"V")
+print("RCD电压=",VRCD_pk,"V")
 print("RCD二极管应力=",VRCD_Diod,"V")
 Nps = VOR/(Vo+0.7)#匝比
 print("匝比=",Nps)
@@ -62,8 +65,8 @@ print("匝比=",Nps)
 #变压器感量计算
 
 Dmax = 0.45 #占空比
-Fsw = 70 * 10**3 #频率
-Krp = 1 #脉动系数，它等于一次侧电流脉动值与峰值电流的比值，CCM模式Krp<1
+Fsw = 100 * 10**3 #频率
+Krp = 0.8 #脉动系数，它等于一次侧电流脉动值与峰值电流的比值，CCM模式Krp<1
 Ii_AVG_Max = Pmax/(eff * Vi_AC_RMS_Min)#线圈最大平均电流
 print("电流平均值=",Ii_AVG_Max,"A")
 Ipp = Ii_AVG_Max/(1-Krp+Krp/2)**Krp#电流脉动值
@@ -71,9 +74,26 @@ print("电流脉动值=",Ipp,"A")
 Ii_pk = Ipp/Krp
 print("电流峰值=",Ii_pk,"A")
 
+Ld = 60 * 10**-6 #漏感
+ELd = 1/2 * Ld * Ii_pk**2#漏感能量
+VRCD_RMS = (VRCD_pk + VRCD_pb)/2 #估算，不准
+RCD_R  = VRCD_RMS**2 / (ELd*Fsw)
 
+RCD_C = ELd/(1/2 * ((VRCD_pk**2) - (VRCD_pb**2)))
+print("RCD吸收电路电阻=",RCD_R*10**-3,"k")
+RCD_PR = ELd*Fsw
+print("RCD吸收电路电阻功率=",RCD_PR,"W")
+print("RCD吸收电路电容=",RCD_C*10**9,"nF")
 #Lp = Vbus_AVG_Min*Dmax / (Fsw*Ipp) 
 #print("计算得初级线圈电感量=",Lp * 10**3 ,"mH")
+
+
+#输出电容计算
+Vo_pp = 50 * 10**-3
+
+Co = Io_max/(Vo_pp*Fsw)#估算
+print("估算输出电容=",Co*10**6,"uF")
+
 
 Z = 0.5#Z是副边损耗与总损耗的比例值。如果没有更好的参数信息，应当取Z=0.5。
 Lp = Pmax /(Ii_pk**2 * Krp*(1-Krp/2)*Fsw) * ((Z*(1-eff)+eff)/eff)
@@ -115,7 +135,8 @@ def oth_calc_lg():
 #计算初级线圈匝数
 Np = Lp*Ii_pk / (Bmax*Ae)
 print("初级线圈匝数=",Np)
-
+Ns = Np / Nps
+print("次级线圈匝数=",Ns)
 #磁饱和校验
 def oth_calc_Bmax():
     Bmax = Lp*Ii_pk/(Np*Ae)
@@ -126,7 +147,7 @@ def oth_calc_Bmax():
 lg = (u0*Ae)*(Np**2 / Lp - mesuredMagCore.N1**2 / mesuredMagCore.L1)#气隙计算公式
 print("气隙长度=",lg*10**3,"mm")
 
-
+wire_od = [0.1,0.15,0.2,0.25]
 
 
 
